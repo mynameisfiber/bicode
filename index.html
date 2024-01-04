@@ -81,9 +81,16 @@
                 drawParticle(sentinel[0], sentinel[1], "blue", 1.5 * radius);
                 drawParticle(sentinel[0], sentinel[1], "red", 1.25 * radius);
                 drawParticle(sentinel[0], sentinel[1], "pink", 1.0 * radius);
+                var collisionIndex = -1;
                 for (let i = 0; i < N; i++) {
-                    drawParticle(particles[i][0], particles[i][1], getColor(i), radius);
+                    const distance = calcDistance(sentinel, particles[i])
+                    if (collisionIndex == -1 && distance < 2 * radius) {
+                        collisionIndex = i;
+                    }
+                    const alpha = 1.85 / (calcDistance(sentinel, particles[i]) + 1)**2.25;
+                    drawParticle(particles[i][0], particles[i][1], getColor(i), radius * alpha);
                 }
+                return collisionIndex;
             }
 
             function drawParticle(x, y, color, radius) {
@@ -104,22 +111,20 @@
                 }
             }
 
-            function handleCollision() {
-                const collisionIndex = particles.findIndex(
-                    (particle) => Math.sqrt(particle.reduce((acc, coord, i) => acc + (coord - sentinel[i]) ** 2, 0)) < 2 * radius
-                );
+            function calcDistance(a, b) {
+                return Math.sqrt(a.reduce((acc, coord, i) => acc + (coord - b[i]) ** 2, 0))
+            }
 
-                if (collisionIndex !== -1) {
-                    const color = getColor(collisionIndex);
-                    const colorIndex = colors.indexOf(color);
-                    n_collisions++;
-                    const rotate = colorIndex * 90
-                    canvas.style.transform = `rotate(${rotate}deg)`;
-                    document.body.style.backgroundColor = color;
-                    collisionCounts[color] = (collisionCounts[color] || 0) + 1;
-                    updateCounters();
-                    restartSimulation();
-                }
+            function handleCollision(collisionIndex) {
+                const color = getColor(collisionIndex);
+                const colorIndex = colors.indexOf(color);
+                n_collisions++;
+                const rotate = colorIndex * 90
+                canvas.style.transform = `rotate(${rotate}deg)`;
+                document.body.style.backgroundColor = color;
+                collisionCounts[color] = (collisionCounts[color] || 0) + 1;
+                updateCounters();
+                restartSimulation();
             }
 
             function restartSimulation() {
@@ -137,8 +142,10 @@
                     particle.map(updateCoordinates)
                 );
 
-                handleCollision();
-                drawParticles();
+                const collisionIndex = drawParticles();
+                if (collisionIndex !== -1) {
+                    handleCollision(collisionIndex);
+                }
             }
 
             const simulationInterval = setInterval(updateSimulation, dt * 1000);
