@@ -55,6 +55,7 @@
         const particlePopulations = {
                     'red': 40, 'blue': 45, 'pink': 15,
         };
+        const colors = Object.keys(particlePopulations);
         const collisionCounts = {};
         for (const color of Object.keys(particlePopulations)) {
             collisionCounts[color] = 0;
@@ -111,11 +112,10 @@
 
                 if (collisionIndex !== -1) {
                     const color = getColor(collisionIndex);
+                    const colorIndex = colors.indexOf(color);
                     n_collisions++;
-                    console.log(`Collision detected with particle of color: ${color}`);
-                    const rotate = Math.trunc(collisionIndex - N / 2) % 2 * 90
-                    canvas.style.transform = `rotate(${rotate || 90}deg)`;
-                    console.log(canvas.style);
+                    const rotate = colorIndex * 90
+                    canvas.style.transform = `rotate(${rotate}deg)`;
                     document.body.style.backgroundColor = color;
                     collisionCounts[color] = (collisionCounts[color] || 0) + 1;
                     updateCounters();
