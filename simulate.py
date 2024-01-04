@@ -1,4 +1,3 @@
-import random
 from functools import partial
 from multiprocessing import Pool
 from collections import Counter
@@ -7,7 +6,7 @@ from tqdm import tqdm
 
 
 def simulate_brownian_motion_fast(
-    particle_populations, dt=0.01, radius=0.01, max_steps=1e4, D=3,
+    particle_populations, dt=0.01, radius=0.01, max_steps=1e4, D=3
 ):
     N = sum(particle_populations.values())
     particles = np.random.rand(N, D)
@@ -21,7 +20,9 @@ def simulate_brownian_motion_fast(
         np.clip(particles, 0, 1, out=buffer)
         particles, buffer = buffer, particles
 
-        collisions = np.argwhere(np.linalg.norm(sentinel - particles, axis=1) < 2 * radius)
+        collisions = np.argwhere(
+            np.linalg.norm(sentinel - particles, axis=1) < 2 * radius
+        )
         if len(collisions):
             i = collisions[0, 0]
             for color, n in particle_populations.items():
@@ -39,9 +40,12 @@ def run_many(N, experiment):
     results = []
     try:
         with Pool() as pool:
-            for r in tqdm(pool.imap_unordered(
-                partial(run_experiment, experiment=experiment), range(N)
-            ), total=N):
+            for r in tqdm(
+                pool.imap_unordered(
+                    partial(run_experiment, experiment=experiment), range(N)
+                ),
+                total=N,
+            ):
                 results.append(r)
     except KeyboardInterrupt:
         pass
@@ -50,7 +54,9 @@ def run_many(N, experiment):
 
 # Example usage
 population = {
-    'red': 40, 'blue': 45, 'pink': 15,
+    "red": 40,
+    "blue": 45,
+    "pink": 15,
 }
 D = 2
 N = 100_000
@@ -66,8 +72,8 @@ experiment = Counter(
         partial(
             simulate_brownian_motion_fast,
             population,
-            D = D
-        )
+            D=D,
+        ),
     )
 )
 N_unended = experiment.pop(None, 0)

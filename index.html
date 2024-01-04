@@ -50,10 +50,9 @@
     <canvas id="simulationCanvas" width="500" height="500"></canvas>
     <div id="collisionCounters"></div>
     <script>
-
         // Example usage
         const particlePopulations = {
-                    'red': 40, 'blue': 45, 'pink': 15,
+            'blue': 45, 'red': 40, 'pink': 15,
         };
         const colors = Object.keys(particlePopulations);
         const collisionCounts = {};
@@ -131,6 +130,7 @@
             function updateCoordinates(coord) {
                 return Math.max(0, Math.min(1, coord + (Math.random() - 0.5) * dt));
             }
+
             function updateSimulation() {
                 sentinel = sentinel.map(updateCoordinates);
                 particles = particles.map((particle) =>
