@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brownian Motion Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            flex-direction: column;
+            transition: background-color 0.5s ease;
+        }
+
+        canvas {
+            max-width: 500px;
+            width: 80vw;
+            aspect-ratio: 1 / 1;
+            transition: transform 1s ease;
+            transform: rotate(0deg);
+
+            margin-bottom: 20px;
+            border: 2px solid black;
+            border-radius: 5px;
+            background-color: white;
+            box-shadow: 
+                 2em -2em 4em pink,
+                 2em  2em 4em red,
+                -2em  2em 4em blue;
+        }
+
+        #collisionCounters {
+            z-index: 100;
+            text-align: center;
+            text-shadow: 
+                 3px -3px 3px pink,
+                 3px  3px 3px red,
+                -3px  3px 3px blue;
+            font-weight: bolder;
+            font-size: 1.5em;
+            color: whitesmoke;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="simulationCanvas" width="500" height="500"></canvas>
+    <div id="collisionCounters"></div>
+    <script>
+
+        // Example usage
+        const particlePopulations = {
+                    'red': 40, 'blue': 45, 'pink': 15,
+        };
+        const collisionCounts = {};
+        for (const color of Object.keys(particlePopulations)) {
+            collisionCounts[color] = 0;
+        }
+        var n_collisions = 0;
+        function simulateBrownianMotion(particlePopulations, dt = 0.01, radius = 0.01, D = 2) {
+            const canvas = document.getElementById('simulationCanvas');
+            const countersContainer = document.getElementById('collisionCounters');
+            const ctx = canvas.getContext('2d');
+            const N = Object.values(particlePopulations).reduce((acc, n) => acc + n, 0);
+            const padding = radius;
+            let particles = Array.from({ length: N }, () => Array.from({ length: D }, () => Math.random()));
+            let sentinel = Array.from({ length: D }, () => Math.random());
+            updateCounters();
+
+            function updateCounters() {
+                countersContainer.innerHTML = Object.entries(collisionCounts)
+                            .map(([color, count]) => `<div>${color}: ${count} (${(count / Math.max(1, n_collisions) * 100).toFixed(0)}%)</div>`)
+                    .join('');
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawParticle(sentinel[0], sentinel[1], "blue", 1.5 * radius);
+                drawParticle(sentinel[0], sentinel[1], "red", 1.25 * radius);
+                drawParticle(sentinel[0], sentinel[1], "pink", 1.0 * radius);
+                for (let i = 0; i < N; i++) {
+                    drawParticle(particles[i][0], particles[i][1], getColor(i), radius);
+                }
+            }
+
+            function drawParticle(x, y, color, radius) {
+                const x_scale = (x * (1 - 2 * padding) + padding) * canvas.width;
+                const y_scale = (y * (1 - 2 * padding) + padding) * canvas.height;
+                ctx.beginPath();
+                ctx.arc(x_scale, y_scale, radius * Math.min(canvas.width, canvas.height), 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+
+            function getColor(count) {
+                for (const [color, n] of Object.entries(particlePopulations)) {
+                    count -= n;
+                    if (count <= 0) {
+                        return color;
+                    }
+                }
+            }
+
+            function handleCollision() {
+                const collisionIndex = particles.findIndex(
+                    (particle) => Math.sqrt(particle.reduce((acc, coord, i) => acc + (coord - sentinel[i]) ** 2, 0)) < 2 * radius
+                );
+
+                if (collisionIndex !== -1) {
+                    const color = getColor(collisionIndex);
+                    n_collisions++;
+                    console.log(`Collision detected with particle of color: ${color}`);
+                    const rotate = Math.trunc(collisionIndex - N / 2) % 2 * 90
+                    canvas.style.transform = `rotate(${rotate || 90}deg)`;
+                    console.log(canvas.style);
+                    document.body.style.backgroundColor = color;
+                    collisionCounts[color] = (collisionCounts[color] || 0) + 1;
+                    updateCounters();
+                    restartSimulation();
+                }
+            }
+
+            function restartSimulation() {
+                clearInterval(simulationInterval);
+                simulateBrownianMotion(particlePopulations);
+            }
+
+            function updateCoordinates(coord) {
+                return Math.max(0, Math.min(1, coord + (Math.random() - 0.5) * dt));
+            }
+            function updateSimulation() {
+                sentinel = sentinel.map(updateCoordinates);
+                particles = particles.map((particle) =>
+                    particle.map(updateCoordinates)
+                );
+
+                handleCollision();
+                drawParticles();
+            }
+
+            const simulationInterval = setInterval(updateSimulation, dt * 1000);
+        }
+        simulateBrownianMotion(particlePopulations);
+    </script>
+</body>
+</html>
